@@ -8,7 +8,7 @@ set -x
 
 DOCKER_CONTAINER_NAME=kafka
 # Set the version of the base image.
-DOCKER_ORIGIN=alpine:3.7
+DOCKER_ORIGIN=openjdk:8-jre-alpine3.7
 
 cat - >Dockerfile <<EOF
 FROM ${DOCKER_ORIGIN}
@@ -18,16 +18,17 @@ MAINTAINER Kumar Rohit <https://github.com/kuros/docker-kafka>
 USER root
 #  && \
 
+ADD http://www-eu.apache.org/dist/kafka/1.0.0/kafka_2.11-1.0.0.tgz /tmp
+
 # Install Java
 RUN apk update && \\
 	apk upgrade && \\
-	apk add openjdk8-jre && \\
-	apk add curl && \\
 	apk add tar
 
-ADD http://www-eu.apache.org/dist/kafka/1.0.0/kafka_2.11-1.0.0.tgz /tmp
 
-RUN mkdir kafka && tar -xzf kafka_2.11-1.0.0.tgz -C /kafka --strip-components 1
+RUN mkdir kafka && \\
+	tar -xzf /tmp/kafka_2.11-1.0.0.tgz -C /kafka --strip-components 1 && \\
+	rm -rf /tmp
 
 CMD [`echo 'hello'`]
 
