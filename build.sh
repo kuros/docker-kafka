@@ -16,20 +16,24 @@ FROM ${DOCKER_ORIGIN}
 MAINTAINER Kumar Rohit <https://github.com/kuros/docker-kafka>
 
 USER root
-#  && \
-
-ADD http://www-eu.apache.org/dist/kafka/1.0.0/kafka_2.11-1.0.0.tgz /tmp
 
 # Install Java
 RUN apk update && \\
 	apk upgrade && \\
-	apk add tar
+	apk add tar && \\
+	apk add bash && \\
+	apk add wget
 
+RUN wget -q http://www-eu.apache.org/dist/kafka/1.0.0/kafka_2.11-1.0.0.tgz --output-document=/tmp/kafka.tgz && \\
+	mkdir kafka && \\
+	tar -xzf /tmp/kafka.tgz -C /kafka --strip-components 1 && \\
+	rm -rf /tmp/kafka*
 
-RUN mkdir kafka && \\
-	tar -xzf /tmp/kafka_2.11-1.0.0.tgz -C /kafka --strip-components 1 && \\
-	rm -rf /tmp
+ENV BROKER_ID=1
 
-CMD [`echo 'hello'`]
+COPY start.sh /start.sh
+RUN chmod a+x start.sh
+
+CMD ["./start.sh"]
 
 EOF
