@@ -1,6 +1,10 @@
 #!/bin/bash
 
-cat /kafka/config/server.properties \
+KAFKA_LOCATION=/kafka
+KAFKA_PROPERTIES_LOCATION=$KAFKA_LOCATION/config/server.properties
+KAFKA_PROPERTIES_LOCATION_NEW=$KAFKA_LOCATION/config/server.properties.new
+
+cat $KAFKA_PROPERTIES_LOCATION \
 	| sed -e "s/broker.id=0/broker.id=${KAFKA_BROKER_ID:-0}/g" \
 	-e "s/num.network.threads=3/num.network.threads=${NUM_NETWORK_THREADS:-3}/g" \
 	-e "s/num.io.threads=8/num.io.threads=${NUM_IO_THREADS:-8}/g" \
@@ -19,16 +23,41 @@ cat /kafka/config/server.properties \
 	-e "s/zookeeper.connect=localhost:2181/zookeeper.connect=${ZOOKEEPER_CONNECT:-localhost:2181}/g" \
 	-e "s/zookeeper.connection.timeout.ms=6000/zookeeper.connection.timeout.ms=${ZOOKEEPER_CONNECTION_TIMEOUT:-6000}/g" \
 	-e "s/group.initial.rebalance.delay.ms=0/group.initial.rebalance.delay.ms=${GROUP_INITIAL_REBALANCE_DELAY_MS:-0}/g" \
-	> /kafka/config/server.properties.new
+	> $KAFKA_PROPERTIES_LOCATION_NEW
 
-mv /kafka/config/server.properties.new /kafka/config/server.properties
+
+echo -e '\nlog.dir=/data' >> $KAFKA_PROPERTIES_LOCATION_NEW
+
+if [[ ! -z $ADVERTISED_LISTENERS ]]; then
+	echo -e '\n'$ADVERTISED_LISTENERS >> $KAFKA_PROPERTIES_LOCATION_NEW
+
+elif [[ ! -z $ADVERTISED_HOSTNAME ]]; then
+	echo -e '\n'advertised.listeners=${ADVERTISED_PROTOCOL:-PLAINTEXT}://${ADVERTISED_HOSTNAME}:${ADVERTISED_PORT:-9092} >> $KAFKA_PROPERTIES_LOCATION_NEW
+fi
+
+
+if [[ ! -z $LISTENER_SECURITY_PROTOCOL_MAP ]]; then
+	echo -e '\n'listener.security.protocol.map = ${ADVERTISED_LISTENERS:-'PLAINTEXT:PLAINTEXT,SSL:SSL,SASL_PLAINTEXT:SASL_PLAINTEXT,SASL_SSL:SASL_SSL'} >> $KAFKA_PROPERTIES_LOCATION_NEW
+fi
+
+
+if [[ ! -z $LISTENER ]]; then
+	echo -e '\n'listeners = $LISTENERS >> $KAFKA_PROPERTIES_LOCATION_NEW
+else 
+	echo -e '\n'listeners = ${ADVERTISED_PROTOCOL:-PLAINTEXT}://:${ADVERTISED_PORT:-9092} >> $KAFKA_PROPERTIES_LOCATION_NEW
+fi
+
+
+mv $KAFKA_PROPERTIES_LOCATION_NEW $KAFKA_PROPERTIES_LOCATION
+
+unset KAFKA_PROPERTIES_LOCATION_NEW
 
 if [[ ${INIT_KAFKA_ZOOKEEPER}  ]]; then
 	echo 'Starting zookeeper'
-	./kafka/bin/zookeeper-server-start.sh -daemon /kafka/config/zookeeper.properties
+	$KAFKA/bin/zookeeper-server-start.sh -daemon $KAFKA/config/zookeeper.properties
 	sleep 4	
 	echo 'Zookeeper started'
 fi
 
 echo 'Starting Kafka server'
-./kafka/bin/kafka-server-start.sh /kafka/config/server.properties
+$KAFKA_LOCATION/bin/kafka-server-start.sh $KAFKA_PROPERTIES_LOCATION

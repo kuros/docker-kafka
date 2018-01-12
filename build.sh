@@ -32,21 +32,12 @@ RUN apk update && \\
 	apk del tar wget && \\
 	rm -rf /var/cache/apk/*
 
-
-# Set up a user to run Kafka
-RUN addgroup kafka && \\
-  adduser -D -h /kafka -G kafka kafka && \\
-  mkdir /data && \\
-  chown -R kafka:kafka /kafka /data	
-
-USER kafka
-
 EXPOSE 2181 9092
 
 VOLUME ['/data']
 
 COPY start.sh /start.sh
-CMD ["./start.sh"]
+CMD ["/start.sh"]
 
 EOF
 
