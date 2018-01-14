@@ -45,7 +45,9 @@ EXPOSE 2181 9092
 
 VOLUME ['/data']
 
-COPY start.sh /start.sh
+COPY start.sh docker-entry.sh /
+
+ENTRYPOINT ["/docker-entry.sh"]
 CMD ["/start.sh"]
 
 EOF
