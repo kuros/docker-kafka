@@ -12,9 +12,18 @@ DOCKER_ORIGIN=openjdk:8-jre-alpine3.7
 KAFKA_VERSION=1.0.0
 KAFKA_SCALA_VERION=2.11
 
-cat - >Dockerfile <<EOF
-FROM ${DOCKER_ORIGIN}
+DIRECTORY=.
 
+if [[ ! -z $1 ]]; then
+	echo $1
+	DIRECTORY=$1
+	mkdir -p $DIRECTORY
+	cp start.sh $DIRECTORY
+fi
+
+cat - >$DIRECTORY/Dockerfile <<EOF
+FROM ${DOCKER_ORIGIN}
+	
 MAINTAINER Kumar Rohit <https://github.com/kuros/docker-kafka>
 
 USER root
@@ -41,5 +50,5 @@ CMD ["/start.sh"]
 
 EOF
 
-docker build -t ${DOCKER_CONTAINER_NAME} .
+docker build -t ${DOCKER_CONTAINER_NAME} $DIRECTORY
 
